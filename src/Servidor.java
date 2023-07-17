@@ -177,8 +177,14 @@ public class Servidor {
                         }
 
 
-                        dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+                        Socket clientSocket = new Socket(msg.clientAddress, msg.clientPort);
+                        OutputStream clientOutputStream = clientSocket.getOutputStream();
+                        DataOutputStream clientDataOutputStream = new DataOutputStream(new BufferedOutputStream(clientOutputStream));
+                        clientDataOutputStream.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+
+                        clientDataOutputStream.flush();
                         dos.flush();
+                        clientSocket.close();
                         socket.close();
                         break;
 
