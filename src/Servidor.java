@@ -272,13 +272,6 @@ public class Servidor {
                 InputStream is = socket.getInputStream();
                 DataInputStream dis = new DataInputStream(is);
                 dos.writeUTF(new Gson().toJson(new Mensagem("FORWARD", key, value, clientAddress, clientPort)));
-                String response = dis.readUTF();
-                Mensagem msg = new Gson().fromJson(response, Mensagem.class);
-                if (msg.operation.equals("REPLICATION_OK")) {
-                    System.out.println("Operation successful");
-                } else {
-                    System.out.println("Operation failed");
-                }
                 dos.flush();
                 socket.close();
             } catch (IOException e) {
@@ -313,7 +306,16 @@ public class Servidor {
                 Socket socket = new Socket(followerIP, followerPort);
                 OutputStream os = socket.getOutputStream();
                 DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
+                InputStream is = socket.getInputStream();
+                DataInputStream dis = new DataInputStream(is);
                 dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION", key, value, timestamp)));
+                String response = dis.readUTF();
+                Mensagem msg = new Gson().fromJson(response, Mensagem.class);
+                if (msg.operation.equals("REPLICATION_OK")) {
+                    System.out.println("Operation successful");
+                } else {
+                    System.out.println("Operation failed");
+                }
 
                 dos.flush();
                 socket.close();
