@@ -131,6 +131,7 @@ public class Servidor {
                         //If it's the leader, store the value and send it to the followers
                         if (isLeader && followers.size() > 0) {
                             long timestamp = System.currentTimeMillis();
+                            System.out.println("Cliente" + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " PUT " + "key: " + msg.key + " value: " + msg.value);
                             store.put(msg.key, new StoredValue(msg.value, timestamp));
 
                             ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -142,6 +143,7 @@ public class Servidor {
                             executor.shutdown();
                             while (!executor.isTerminated()) {
                             }
+                            System.out.println("Enviando PUT_OK ao cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " key: " + msg.key + " value: " + msg.value + " ts: " + timestamp);
 
                             dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
                             dos.flush();
@@ -150,7 +152,8 @@ public class Servidor {
                         }
 
                         //If it's a follower, forward the message to the leader
-                        new Thread(new ForwarderService(leaderAddress, msg.key, msg.value, "127.0.0.1", socket.getPort())).start();
+                        System.out.println("Encaminhando PUT key:" + msg.key + " value: " + msg.value);
+                        new Thread(new ForwarderService(leaderAddress, msg.key, msg.value, (socket.getInetAddress()).getHostAddress(), socket.getPort())).start();
                         dos.flush();
                         socket.close();
                         break;
@@ -176,6 +179,8 @@ public class Servidor {
                         while (!executor.isTerminated()) {
                         }
 
+
+                        System.out.println("Cliente " + msg.clientAddress + ":" + msg.clientPort + " PUT " + "key: " + msg.key + " value: " + msg.value);
 
                         Socket clientSocket = new Socket(msg.clientAddress, msg.clientPort);
                         OutputStream clientOutputStream = clientSocket.getOutputStream();
@@ -212,6 +217,8 @@ public class Servidor {
                             socket.close();
                             break;
                         }
+
+                        System.out.println("REPLICATION key: " + msg.key + " value: " + msg.value);
 
                         store.put(msg.key, new StoredValue(msg.value, msg.timestamp));
                         dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION_OK")));
