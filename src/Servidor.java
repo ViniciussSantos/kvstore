@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Servidor {
     ConcurrentHashMap<String, StoredValue> store = new ConcurrentHashMap<String, StoredValue>();
@@ -124,19 +126,60 @@ public class Servidor {
 
                 String response = dis.readUTF();
                 Mensagem msg = new Gson().fromJson(response, Mensagem.class);
-                //TODO: Close the connection on every switch case
                 switch (msg.operation) {
                     case "PUT":
-                        if (isLeader) {
-                            store.put(msg.key, new StoredValue(msg.value, System.currentTimeMillis()));
-                            //TODO: replicate to followers
-                            //TODO: create two threads, one for each follower and wait for them to finish
-                            //Should I use a thread pool?
-                            //https://www.javatpoint.com/java-thread-pool
-                        }
-                        //TODO: If it's a follower, forward the message to the leader
-                        //TODO: If it's a follower, close the connection and let the leader handle the response
+                        //If it's the leader, store the value and send it to the followers
+                        if (isLeader && followers.size() > 0) {
+                            long timestamp = System.currentTimeMillis();
+                            store.put(msg.key, new StoredValue(msg.value, timestamp));
 
+                            ExecutorService executor = Executors.newFixedThreadPool(2);
+                            for (String follower : followers) {
+                                String[] followerAddress = follower.split(":");
+                                executor.execute(new ReplicationService(followerAddress[0], Integer.parseInt(followerAddress[1]), msg.key, msg.value, timestamp));
+                            }
+
+                            executor.shutdown();
+                            while (!executor.isTerminated()) {
+                            }
+
+                            dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+                            dos.flush();
+                            socket.close();
+                            break;
+                        }
+
+                        //If it's a follower, forward the message to the leader
+                        new Thread(new ForwarderService(leaderAddress, msg.key, msg.value, "127.0.0.1", socket.getPort())).start();
+                        dos.flush();
+                        socket.close();
+                        break;
+
+                    case "FORWARD":
+                        if (!isLeader) {
+                            dos.writeUTF("ERROR: Follower can't receive forward messages");
+                            dos.flush();
+                            socket.close();
+                            break;
+                        }
+
+                        //store the value and send it to the followers
+                        long timestamp = System.currentTimeMillis();
+                        store.put(msg.key, new StoredValue(msg.value, timestamp));
+                        ExecutorService executor = Executors.newFixedThreadPool(2);
+                        for (String follower : followers) {
+                            String[] followerAddress = follower.split(":");
+                            executor.execute(new ReplicationService(followerAddress[0], Integer.parseInt(followerAddress[1]), msg.key, msg.value, timestamp));
+                        }
+
+                        executor.shutdown();
+                        while (!executor.isTerminated()) {
+                        }
+
+
+                        dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+                        dos.flush();
+                        socket.close();
                         break;
 
                     case "GET":
@@ -178,23 +221,91 @@ public class Servidor {
         }
     }
 
+    /**
+     * This class represents the thread that will be responsible for forwarding the message to the leader.
+     */
+    private static class ForwarderService implements Runnable {
 
-    private static class Forwarder implements Runnable {
+        String leader;
+        String key;
+        String value;
+        String clientAddress;
+        Integer clientPort;
+
+        public ForwarderService(String leader, String key, String value, String clientAddress, Integer clientPort) {
+            this.leader = leader;
+            this.key = key;
+            this.value = value;
+            this.clientAddress = clientAddress;
+            this.clientPort = clientPort;
+        }
+
 
         @Override
         public void run() {
+            try {
+                String[] leader = this.leader.split(":");
+                Socket socket = new Socket(leader[0], Integer.parseInt(leader[1]));
+                OutputStream os = socket.getOutputStream();
+                DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
+                InputStream is = socket.getInputStream();
+                DataInputStream dis = new DataInputStream(is);
+                dos.writeUTF(new Gson().toJson(new Mensagem("FORWARD", key, value, clientAddress, clientPort)));
+                String response = dis.readUTF();
+                Mensagem msg = new Gson().fromJson(response, Mensagem.class);
+                if (msg.operation.equals("REPLICATION_OK")) {
+                    System.out.println("Operation successful");
+                } else {
+                    System.out.println("Operation failed");
+                }
+                dos.flush();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         }
     }
 
+    /**
+     * This class handles the replication of the data to the followers
+     */
     private static class ReplicationService implements Runnable {
+        String followerIP;
+        Integer followerPort;
+        String key;
+        String value;
+        long timestamp;
+
+        public ReplicationService(String followerIP, Integer followerPort, String key, String value, long timestamp) {
+            this.followerIP = followerIP;
+            this.followerPort = followerPort;
+            this.key = key;
+            this.value = value;
+            this.timestamp = timestamp;
+        }
 
         @Override
         public void run() {
 
+            try {
+                Socket socket = new Socket(followerIP, followerPort);
+                OutputStream os = socket.getOutputStream();
+                DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
+                dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION", key, value, timestamp)));
+
+                dos.flush();
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
+    /**
+     * This class stores the value and the timestamp of the value
+     */
     private static class StoredValue {
         String value;
         long timestamp;
