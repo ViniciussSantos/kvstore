@@ -185,21 +185,29 @@ public class Servidor {
                     case "GET":
                         StoredValue storedValue = store.get(msg.key);
                         if (storedValue != null) {
-                            //TODO: Check the timestamp to see if the stored value is the latest one
+
+                            //TODO: Check if this is correct
+                            //Wouldn't this always be true if because the client timestamp is always the current time when the client sends the message?
+                            // making this check useless?
+                            if (storedValue.timestamp < msg.timestamp) {
+                                dos.writeUTF(new Gson().toJson(new Mensagem("TRY_OTHER_SERVER_OR_LATER")));
+                                break;
+                            }
+
+                            dos.writeUTF(new Gson().toJson(new Mensagem("GET_OK", msg.key, storedValue.value, storedValue.timestamp)));
                             break;
                         }
-                        //TODO: If it's null, return a message saying that the key doesn't exist
+                        dos.writeUTF(new Gson().toJson(new Mensagem("NULL")));
                         break;
                     case "REPLICATION":
                         if (isLeader) {
-                            dos.writeUTF("ERROR: Leader can't receive replication messages");
+                            dos.writeUTF("ERROR: Leader can't receive replication messsages");
                             dos.flush();
                             socket.close();
                             break;
                         }
 
                         store.put(msg.key, new StoredValue(msg.value, msg.timestamp));
-                        //
                         dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION_OK")));
                         dos.flush();
                         socket.close();
