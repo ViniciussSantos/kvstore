@@ -1,5 +1,3 @@
-package src;
-
 import com.google.gson.Gson;
 
 import java.io.*;
@@ -145,7 +143,7 @@ public class Servidor {
                             }
                             System.out.println("Enviando PUT_OK ao cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " key: " + msg.key + " value: " + msg.value + " ts: " + timestamp);
 
-                            dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+                            dos.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, msg.value, timestamp)));
                             dos.flush();
                             socket.close();
                             break;
@@ -153,7 +151,8 @@ public class Servidor {
 
                         //If it's a follower, forward the message to the leader
                         System.out.println("Encaminhando PUT key:" + msg.key + " value: " + msg.value);
-                        new Thread(new ForwarderService(leaderAddress, msg.key, msg.value, (socket.getInetAddress()).getHostAddress(), socket.getPort())).start();
+                        new Thread(new ForwarderService(leaderAddress, msg.key, msg.value, msg.clientAddress, msg.clientPort)).start();
+                        dos.writeUTF(new Gson().toJson(new Mensagem("FORWARD")));
                         dos.flush();
                         socket.close();
                         break;
@@ -165,7 +164,7 @@ public class Servidor {
                             socket.close();
                             break;
                         }
-
+                        System.out.println("Cliente " + msg.clientAddress + ":" + msg.clientPort + " PUT " + "key: " + msg.key + " value: " + msg.value);
                         //store the value and send it to the followers
                         long timestamp = System.currentTimeMillis();
                         store.put(msg.key, new StoredValue(msg.value, timestamp));
@@ -178,14 +177,15 @@ public class Servidor {
                         executor.shutdown();
                         while (!executor.isTerminated()) {
                         }
+                        System.out.println("Enviando PUT_OK ao cliente " + msg.clientAddress + ":" + msg.clientPort + " key: " + msg.key + " value: " + msg.value + " ts: " + timestamp);
 
-
-                        System.out.println("Cliente " + msg.clientAddress + ":" + msg.clientPort + " PUT " + "key: " + msg.key + " value: " + msg.value);
 
                         Socket clientSocket = new Socket(msg.clientAddress, msg.clientPort);
                         OutputStream clientOutputStream = clientSocket.getOutputStream();
                         DataOutputStream clientDataOutputStream = new DataOutputStream(new BufferedOutputStream(clientOutputStream));
-                        clientDataOutputStream.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp)));
+                        //This will always return the port of the leader server, because the leader is the one who sends the message back to the client
+                        //TODO: Find a way to pass the port of the server (aka follower) that received the message
+                        clientDataOutputStream.writeUTF(new Gson().toJson(new Mensagem("PUT_OK", msg.key, null, timestamp, (socket.getInetAddress()).getHostAddress(), socket.getLocalPort())));
 
                         clientDataOutputStream.flush();
                         dos.flush();
@@ -199,16 +199,27 @@ public class Servidor {
 
                             //TODO: Check if this is correct
                             //Wouldn't this always be true if because the client timestamp is always the current time when the client sends the message?
+                            // client timestamp = System.currentTimeMillis() of the client ?
                             // making this check useless?
                             if (storedValue.timestamp < msg.timestamp) {
+                                System.out.println("Cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " GET " + "key: " + msg.key + " ts: " + msg.timestamp
+                                        + ". Meu ts: " + storedValue.timestamp + " portando devolvendo " + "TRY_OTHER_SERVER_OR_LATER" + ". Diferença: " + (msg.timestamp - storedValue.timestamp));
                                 dos.writeUTF(new Gson().toJson(new Mensagem("TRY_OTHER_SERVER_OR_LATER")));
+                                dos.flush();
                                 break;
                             }
 
+                            System.out.println("Cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " GET " + "key: " + msg.key + " ts: " + msg.timestamp
+                                    + ". Meu ts: " + storedValue.timestamp + " portando devolvendo " + storedValue.value + ". Diferença: " + (msg.timestamp - storedValue.timestamp));
+
                             dos.writeUTF(new Gson().toJson(new Mensagem("GET_OK", msg.key, storedValue.value, storedValue.timestamp)));
+                            dos.flush();
                             break;
                         }
-                        dos.writeUTF(new Gson().toJson(new Mensagem("NULL")));
+                        System.out.println("Cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " GET " + "key: " + msg.key + " ts: " + msg.timestamp
+                                + ". Meu ts: " + "NULL" + " portando devolvendo " + "NULL" + " Diferença: " + "NULL");
+                        dos.writeUTF(new Gson().toJson(new Mensagem("GET_OK", msg.key, null, 0)));
+                        dos.flush();
                         break;
                     case "REPLICATION":
                         if (isLeader) {
@@ -309,12 +320,13 @@ public class Servidor {
                 InputStream is = socket.getInputStream();
                 DataInputStream dis = new DataInputStream(is);
                 dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION", key, value, timestamp)));
+                dos.flush();
                 String response = dis.readUTF();
                 Mensagem msg = new Gson().fromJson(response, Mensagem.class);
                 if (msg.operation.equals("REPLICATION_OK")) {
-                    System.out.println("Operation successful");
+                    System.out.println("REPLICATION_OK");
                 } else {
-                    System.out.println("Operation failed");
+                    System.out.println("REPLICATION_ERROR");
                 }
 
                 dos.flush();
