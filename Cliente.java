@@ -236,7 +236,7 @@ public class Cliente {
                         break;
                     case "PUT_OK":
                         recentWrites.put(key, receivedMessage.timestamp);
-                        System.out.println("PUT_OK key: " + receivedMessage.key + " value: " + receivedMessage.value + " timestamp: " + receivedMessage.timestamp
+                        System.out.println("PUT_OK key: " + key + " value: " + value + " timestamp: " + receivedMessage.timestamp
                                 + " realizada no servidor " + ipAddress + ":" + port);
 
                         break;
@@ -246,7 +246,7 @@ public class Cliente {
 
                         break;
                     default:
-                        System.out.println(receivedMessage);
+                        System.out.println(receivedMessage.operation);
                         System.out.println("Invalid operation or error");
                         break;
                 }
