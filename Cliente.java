@@ -241,8 +241,16 @@ public class Cliente {
 
                         break;
                     case "GET_OK":
+                        long clientTimestamp;
+                        if (recentWrites.containsKey(key)) {
+                            recentWrites.put(key, receivedMessage.timestamp);
+                            clientTimestamp = recentWrites.get(key);
+                        } else {
+                            recentWrites.put(key, receivedMessage.timestamp);
+                            clientTimestamp = receivedMessage.timestamp;
+                        }
                         System.out.println("GET key: " + receivedMessage.key + " value: " + receivedMessage.value
-                                + " obtido do servidor " + ipAddress + ":" + port + " meu timestamp : " + "[Need to find out] " + "e do servidor " + receivedMessage.timestamp);
+                                + " obtido do servidor " + ipAddress + ":" + port + " meu timestamp : " + clientTimestamp + " e do servidor " + receivedMessage.timestamp);
 
                         break;
                     default:
