@@ -318,6 +318,7 @@ public class Servidor {
                 DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
                 InputStream is = socket.getInputStream();
                 DataInputStream dis = new DataInputStream(is);
+                Thread.sleep(9000);
                 dos.writeUTF(new Gson().toJson(new Mensagem("REPLICATION", key, value, timestamp)));
                 dos.flush();
                 String response = dis.readUTF();
@@ -332,6 +333,8 @@ public class Servidor {
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
 
         }
