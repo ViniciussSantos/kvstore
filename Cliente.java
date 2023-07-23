@@ -127,7 +127,7 @@ public class Cliente {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
                     Socket clientSocket = serverSocket.accept();
-                    new Thread(new ServerHandler(clientSocket, servers, recentWrites)).start();
+                    new Thread(new ServerHandler(clientSocket, recentWrites)).start();
                 }
 
                 serverSocket.close();
@@ -142,13 +142,11 @@ public class Cliente {
      */
     private static class ServerHandler implements Runnable {
         private final Socket clientSocket;
-        private final Vector<String> servers;
 
         private final ConcurrentHashMap<String, Long> recentWrites;
 
-        public ServerHandler(Socket clientSocket, Vector<String> servers, ConcurrentHashMap<String, Long> recentWrites) {
+        public ServerHandler(Socket clientSocket, ConcurrentHashMap<String, Long> recentWrites) {
             this.clientSocket = clientSocket;
-            this.servers = servers;
             this.recentWrites = recentWrites;
         }
 
