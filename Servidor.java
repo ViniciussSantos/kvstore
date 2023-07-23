@@ -218,6 +218,7 @@ public class Servidor {
                                 + ". Meu ts: " + "NULL" + " portando devolvendo " + "NULL" + " Diferença: " + "NULL");
                         dos.writeUTF(new Gson().toJson(new Mensagem("GET_OK", msg.key, null, 0)));
                         dos.flush();
+                        socket.close();
                         break;
                     case "REPLICATION":
                         if (isLeader) {
