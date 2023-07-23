@@ -83,14 +83,22 @@ public class Cliente {
                     }
 
                     String key = commandParts[1];
-                    String value = commandParts[2];
+
+                    if (commandParts.length == 4) {
+                        String serverAddress = commandParts[2];
+                        int serverPort = Integer.parseInt(commandParts[3]);
+                        new Thread(new ClientThread(serverAddress, serverPort, recentWrites, "GET", key, "", (serverSocket.getInetAddress()).getHostAddress(), serverSocket.getLocalPort())).start();
+                        break;
+
+                    }
 
                     String server = getRandomServer(servers);
                     String[] serverParts = server.split(":");
                     String serverAddress = serverParts[0];
                     int serverPort = Integer.parseInt(serverParts[1]);
 
-                    new Thread(new ClientThread(serverAddress, serverPort, recentWrites, "GET", key, value, (serverSocket.getInetAddress()).getHostAddress(), serverSocket.getLocalPort())).start();
+                    new Thread(new ClientThread(serverAddress, serverPort, recentWrites, "GET", key, "", (serverSocket.getInetAddress()).getHostAddress(), serverSocket.getLocalPort())).start();
+                    break;
 
 
             }
