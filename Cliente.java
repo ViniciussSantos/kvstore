@@ -20,8 +20,8 @@ public class Cliente {
         }
 
 
-        Vector<String> servers = new Vector<String>(Arrays.asList(args));
-        ConcurrentHashMap<String, Long> recentWrites = new ConcurrentHashMap<String, Long>();
+        Vector<String> servers = new Vector<>(Arrays.asList(args));
+        ConcurrentHashMap<String, Long> recentWrites = new ConcurrentHashMap<>();
         ServerSocket serverSocket = new ServerSocket(0);
 
         Scanner scanner = new Scanner(System.in);
