@@ -12,11 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Cliente {
 
-
-    static String getRandomServer(Vector<String> servers) {
-        return servers.get(new Random().nextInt(servers.size()));
-    }
-
     public static void main(String[] args) throws IOException {
         if (args.length < 3) {
             System.out.println("Usage: java Cliente <server1> <server2> ...");
@@ -62,7 +57,7 @@ public class Cliente {
                     String putKey = commandParts[1];
                     String putValue = commandParts[2];
 
-                    String putServer = getRandomServer(servers);
+                    String putServer = servers.get(new Random().nextInt(servers.size()));
                     String[] putServerParts = putServer.split(":");
                     String putServerAddress = putServerParts[0];
                     int putServerPort = Integer.parseInt(putServerParts[1]);
@@ -92,7 +87,7 @@ public class Cliente {
 
                     }
 
-                    String server = getRandomServer(servers);
+                    String server = servers.get(new Random().nextInt(servers.size()));
                     String[] serverParts = server.split(":");
                     String serverAddress = serverParts[0];
                     int serverPort = Integer.parseInt(serverParts[1]);
