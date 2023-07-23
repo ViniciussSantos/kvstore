@@ -279,8 +279,6 @@ public class Servidor {
                 Socket socket = new Socket(leader[0], Integer.parseInt(leader[1]));
                 OutputStream os = socket.getOutputStream();
                 DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
-                InputStream is = socket.getInputStream();
-                DataInputStream dis = new DataInputStream(is);
                 dos.writeUTF(new Gson().toJson(new Mensagem("FORWARD", key, value, clientAddress, clientPort)));
                 dos.flush();
                 socket.close();
