@@ -27,7 +27,7 @@ public class Cliente {
 
         Vector<String> servers = new Vector<String>(Arrays.asList(args));
         ConcurrentHashMap<String, Long> recentWrites = new ConcurrentHashMap<String, Long>();
-        ServerSocket serverSocket = new ServerSocket(8000);
+        ServerSocket serverSocket = new ServerSocket(0);
 
         Scanner scanner = new Scanner(System.in);
         boolean initialized = false;
