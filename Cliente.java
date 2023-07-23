@@ -155,8 +155,6 @@ public class Cliente {
         @Override
         public void run() {
             try {
-                OutputStream os = clientSocket.getOutputStream();
-                DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(os));
                 InputStream is = clientSocket.getInputStream();
                 DataInputStream dis = new DataInputStream(is);
 
