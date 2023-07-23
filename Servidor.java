@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Servidor {
+
     ConcurrentHashMap<String, StoredValue> store = new ConcurrentHashMap<String, StoredValue>();
 
     public static void main(String[] args) {
@@ -197,10 +198,7 @@ public class Servidor {
                         StoredValue storedValue = store.get(msg.key);
                         if (storedValue != null) {
 
-                            //TODO: Check if this is correct
-                            //Wouldn't this always be true if because the client timestamp is always the current time when the client sends the message?
-                            // client timestamp = System.currentTimeMillis() of the client ?
-                            // making this check useless?
+                            //if the timestamp of the stored value is greater than the timestamp of the request, then the value is outdated
                             if (storedValue.timestamp < msg.timestamp) {
                                 System.out.println("Cliente " + (socket.getInetAddress()).getHostAddress() + ":" + socket.getPort() + " GET " + "key: " + msg.key + " ts: " + msg.timestamp
                                         + ". Meu ts: " + storedValue.timestamp + " portando devolvendo " + "TRY_OTHER_SERVER_OR_LATER" + ". Diferença: " + (msg.timestamp - storedValue.timestamp));
