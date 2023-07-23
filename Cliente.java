@@ -40,7 +40,7 @@ public class Cliente {
 
                     System.out.println("Initializing client");
                     initialized = true;
-                    new Thread(new ServerThread(serverSocket, servers, recentWrites)).start();
+                    new Thread(new ServerThread(serverSocket, recentWrites)).start();
                     break;
 
                 case "PUT":
@@ -108,12 +108,10 @@ public class Cliente {
      */
     private static class ServerThread extends Thread {
         private final ServerSocket serverSocket;
-        private final Vector<String> servers;
         private final ConcurrentHashMap<String, Long> recentWrites;
 
-        public ServerThread(ServerSocket serverSocket, Vector<String> servers, ConcurrentHashMap<String, Long> recentWrites) {
+        public ServerThread(ServerSocket serverSocket, ConcurrentHashMap<String, Long> recentWrites) {
             this.serverSocket = serverSocket;
-            this.servers = servers;
             this.recentWrites = recentWrites;
         }
 
