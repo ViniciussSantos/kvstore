@@ -77,8 +77,8 @@ public class Cliente {
                         break;
                     }
 
-                    if (commandParts.length < 3) {
-                        System.out.println("Usage: GET <key> <value>");
+                    if (commandParts.length < 2) {
+                        System.out.println("Usage: GET <key>");
                         break;
                     }
 
