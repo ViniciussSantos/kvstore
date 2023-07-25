@@ -11,26 +11,25 @@ import java.util.concurrent.Executors;
 
 public class Servidor {
 
-    ConcurrentHashMap<String, StoredValue> store = new ConcurrentHashMap<String, StoredValue>();
-
     public static void main(String[] args) {
         if (args.length < 2) {
-            System.out.println("Usage if leader: java Servidor <ipAddress> <port> --followers <follower1> <follower2> ...");
-            System.out.println("Example: java Servidor 127.0.0.1 10097 --followers 127.0.0.1:10098 127.0.0.1:10099");
-            System.out.println("Usage if follower: java Servidor <ipAddress> <port> --leader <leader>");
-            System.out.println("Example: java Servidor 127.0.0.1 10097 --leader 127.0.0.1:10098");
+            System.out.println("Usage if leader: java Servidor <ipAddress>:<port> --followers <follower1> <follower2> ...");
+            System.out.println("Example: java Servidor 127.0.0.1:10097 --followers 127.0.0.1:10098 127.0.0.1:10099");
+            System.out.println("Usage if follower: java Servidor <ipAddress>:<port> --leader <leader>");
+            System.out.println("Example: java Servidor 127.0.0.1:10097 --leader 127.0.0.1:10098");
             return;
         }
 
-        String ipAddress = args[0];
-        int port = Integer.parseInt(args[1]);
+        String serverAddress = args[0];
+        String ipAddress = serverAddress.split(":")[0];
+        int port = Integer.parseInt(serverAddress.split(":")[1]);
 
-        if (args[2].equals("--leader")) {
-            String leaderAddress = args[3];
+        if (args[1].equals("--leader")) {
+            String leaderAddress = args[2];
             System.out.println("Starting follower on " + ipAddress + ":" + port + " with leader " + leaderAddress);
             new Thread(new ServerThread(ipAddress, port, false, leaderAddress)).start();
-        } else if (args[2].equals("--followers")) {
-            Vector<String> followers = new Vector<String>(Arrays.asList(args).subList(3, args.length));
+        } else if (args[1].equals("--followers")) {
+            Vector<String> followers = new Vector<String>(Arrays.asList(args).subList(2, args.length));
             new Thread(new ServerThread(ipAddress, port, true, followers)).start();
             System.out.println("Starting leader on " + ipAddress + ":" + port + " with followers " + followers);
         }
